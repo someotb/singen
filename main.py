@@ -19,7 +19,7 @@ def sin_gen(freq: int, duration: int):
 def interpolation(signal, up_koef: int):
     signal_up = np.zeros(len(signal) * up_koef)
     signal_up[::up_koef] = signal
-    numtaps = 8 * up_koef
+    numtaps = 8 * up_koef + 1
     h = firwin(numtaps, cutoff=1.0 / up_koef, window="hamming")
     filtered = lfilter(h * up_koef, 1.0, signal_up)
     return filtered
@@ -27,6 +27,36 @@ def interpolation(signal, up_koef: int):
 
 def decimacia(signal, dec_koef: int):
     return signal[::dec_koef]
+
+
+def check_error():
+    frequencies = [40, 100, 300]
+    delay = 4
+    errors = {}
+
+    for freq in frequencies:
+        sin_base, _ = sin_gen(freq, 1)
+        sin_up = interpolation(sin_base, UP_KOEF)
+        sin_dec = decimacia(sin_up, DEC_KOEF)
+
+        sin_dec_aligned = sin_dec[delay:]
+        sin_base_aligned = sin_base[: len(sin_dec_aligned)]
+
+        error = np.abs(sin_dec_aligned - sin_base_aligned)
+        mae = np.mean(error)
+
+        errors[freq] = error
+        print(f"MAE после up и dec(sin{freq}): {mae:.6f}")
+
+    plt.figure(figsize=(10, 8))
+    for i, freq in enumerate(frequencies, 1):
+        plt.subplot(3, 1, i)
+        plt.plot(errors[freq])
+        plt.title(f"Вектор ошибок(sin{freq})")
+        plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
 
 
 sin, t = sin_gen(F, DURATION)
@@ -48,6 +78,8 @@ fft_sin_dec = np.abs(np.fft.fft(sin_dec)) / len(sin_dec)
 fft_freq_dec = np.fft.fftfreq(len(fft_sin_dec), 1 / (len(sin_dec)))
 fft_freq_sh_dec = np.fft.fftshift(fft_freq_dec)
 fft_log_dec = np.fft.fftshift(20 * np.log10(fft_sin_dec))
+
+check_error()
 
 plt.figure()
 plt.plot(t, sin)
