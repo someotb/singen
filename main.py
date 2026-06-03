@@ -12,11 +12,21 @@ def sin_gen(freq: int, duration: int):
 
 def interpolation(signal, up_koef: int):
     signal_up = np.zeros(len(signal) * up_koef)
+    for i in range(len(signal_up)):
+        if i % up_koef == 0:
+            signal_up[i] = signal[i // up_koef]
+        else:
+            signal_up[i] = 0
     return signal_up
 
 
 sin, t = sin_gen(500, 1)
+sin_up = interpolation(sin, 3)
 
 plt.figure()
 plt.plot(t, sin)
+
+plt.figure()
+plt.plot(sin_up)
+
 plt.show()
